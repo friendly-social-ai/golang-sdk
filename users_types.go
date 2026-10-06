@@ -15,7 +15,6 @@ var (
 	ErrEmptyUserDescription = fmt.Errorf("user description can't be empty string")
 	ErrEmptyNickname        = fmt.Errorf("nickname can't be empty string")
 	ErrEmptyInterest        = fmt.Errorf("interest can't be empty string")
-	ErrEmptyInterests       = fmt.Errorf("interests can't be empty or nil slice")
 	ErrEmptySocialLink      = fmt.Errorf("social link can't be empty string")
 )
 
@@ -130,12 +129,8 @@ func (i Interests) Value() []Interest {
 	return i.value
 }
 
-// NewInterests creates new Interests or returns an error if their amount is more than 100.
+// NewInterests creates new Interests, which can be empty, or returns an error if their amount is more than 100.
 func NewInterests(i ...Interest) (Interests, error) {
-	if len(i) == 0 {
-		return Interests{}, ErrEmptyInterests
-	}
-
 	if len(i) > 100 {
 		return Interests{}, fmt.Errorf("amount is %d: %w", len(i), ErrTooMuchInterests)
 	}
@@ -144,6 +139,10 @@ func NewInterests(i ...Interest) (Interests, error) {
 }
 
 func (i Interests) MarshalJSON() ([]byte, error) {
+	if len(i.value) == 0 {
+		return []byte("[]"), nil
+	}
+
 	return json.Marshal(i.value)
 }
 

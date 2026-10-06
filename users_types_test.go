@@ -112,11 +112,15 @@ func TestUsersTypes(t *testing.T) {
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrTooMuchInterests)
 
-		_, err = NewInterests()
-		require.Error(t, err)
-		require.ErrorIs(t, err, ErrEmptyInterests)
+		empty, err := NewInterests()
+		require.NoError(t, err)
+		require.Empty(t, empty.Value())
 
-		data, err := json.Marshal(interests)
+		data, err := json.Marshal(empty)
+		require.NoError(t, err)
+		require.Equal(t, `[]`, string(data))
+
+		data, err = json.Marshal(interests)
 		require.NoError(t, err)
 		require.Equal(t, `["vim","debian"]`, string(data))
 
