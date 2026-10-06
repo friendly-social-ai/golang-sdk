@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 )
 
 // FileDescriptor is a helper structure for composing file's ID and AccessHash.
@@ -60,9 +61,10 @@ func (c *Client) DownloadFile(ctx context.Context, fd *FileDescriptor) (io.ReadC
 	return nil, fmt.Errorf("unexpected response: %w", APIError{Code: resp.StatusCode, Body: body})
 }
 
-// UploadFile uploads file from io.Reader to the server and returns corresponding descriptor.
-// It accepts filename by which file will be saved on server, and reader from which file will be read.
-func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Reader) (*FileDescriptor, error) {
+// UploadFile uploads file of size bytes from io.Reader to the server on behalf of Authorization and returns
+// corresponding descriptor. It accepts filename by which file will be saved on server, and reader from which file
+// will be read.
+func (c *Client) UploadFile(ctx context.Context, auth *Authorization, filename string, reader io.Reader, size int64) (*FileDescriptor, error) {
 	pr, pw := io.Pipe()
 	writer := multipart.NewWriter(pw)
 	filename = path.Base(filename)
@@ -93,6 +95,8 @@ func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Read
 	}
 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-File-Size", strconv.FormatInt(size, 10))
+	authorize(req, auth)
 
 	var resp uploadFileResponse
 	err = c.execute(req, &resp)

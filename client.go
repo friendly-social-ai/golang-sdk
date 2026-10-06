@@ -86,12 +86,17 @@ func (c *Client) request(ctx context.Context, auth *Authorization, method, path 
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	authorize(req, auth)
+
+	return req, nil
+}
+
+// authorize sets Authorization headers on req, leaving it anonymous when auth is nil.
+func authorize(req *http.Request, auth *Authorization) {
 	if auth != nil {
 		req.Header.Set("X-User-Id", fmt.Sprintf("%d", auth.Id.Value()))
 		req.Header.Set("X-Token", string(auth.Token.Value()))
 	}
-
-	return req, nil
 }
 
 func (c *Client) execute(req *http.Request, result any) error {
