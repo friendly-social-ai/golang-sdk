@@ -65,6 +65,27 @@ func (c *Client) DownloadFile(ctx context.Context, fd *FileDescriptor) (io.ReadC
 // corresponding descriptor. It accepts filename by which file will be saved on server, and reader from which file
 // will be read.
 func (c *Client) UploadFile(ctx context.Context, auth *Authorization, filename string, reader io.Reader, size int64) (*FileDescriptor, error) {
+	fd, err := c.sendFile(ctx, auth, "/files/upload", filename, reader, size)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload file: %w", err)
+	}
+
+	return fd, nil
+}
+
+// PreuploadFile uploads file the same way as UploadFile, but for use before the account exists, like the avatar
+// passed to Register. Authorization may be nil.
+func (c *Client) PreuploadFile(ctx context.Context, auth *Authorization, filename string, reader io.Reader, size int64) (*FileDescriptor, error) {
+	fd, err := c.sendFile(ctx, auth, "/files/preupload", filename, reader, size)
+	if err != nil {
+		return nil, fmt.Errorf("failed to preupload file: %w", err)
+	}
+
+	return fd, nil
+}
+
+// sendFile posts file of size bytes from reader as multipart form to endpoint and returns its descriptor.
+func (c *Client) sendFile(ctx context.Context, auth *Authorization, endpoint, filename string, reader io.Reader, size int64) (*FileDescriptor, error) {
 	pr, pw := io.Pipe()
 	writer := multipart.NewWriter(pw)
 	filename = path.Base(filename)
@@ -84,9 +105,9 @@ func (c *Client) UploadFile(ctx context.Context, auth *Authorization, filename s
 		_, err = io.Copy(part, reader)
 	}()
 
-	completePath, err := url.JoinPath(c.url, "/files/upload")
+	completePath, err := url.JoinPath(c.url, endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("invalid path: %s + %s", c.url, "/files/upload")
+		return nil, fmt.Errorf("invalid path: %s + %s", c.url, endpoint)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", completePath, pr)
@@ -99,9 +120,8 @@ func (c *Client) UploadFile(ctx context.Context, auth *Authorization, filename s
 	authorize(req, auth)
 
 	var resp uploadFileResponse
-	err = c.execute(req, &resp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upload file: %w", err)
+	if err := c.execute(req, &resp); err != nil {
+		return nil, err
 	}
 
 	return &FileDescriptor{

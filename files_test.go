@@ -35,6 +35,9 @@ func TestUploadFile_Success(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/files/upload", r.URL.Path)
+		require.Equal(t, "11", r.Header.Get("X-File-Size"))
+		require.Equal(t, "1", r.Header.Get("X-User-Id"))
+		require.Equal(t, "token", r.Header.Get("X-Token"))
 
 		err := r.ParseMultipartForm(1 << 20)
 		require.NoError(t, err)
@@ -59,8 +62,9 @@ func TestUploadFile_Success(t *testing.T) {
 	client := NewClient().
 		WithBaseURL(ts.URL)
 
+	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
 	file := strings.NewReader("hello world")
-	fd, err := client.UploadFile(context.Background(), "file.txt", file)
+	fd, err := client.UploadFile(context.Background(), auth, "file.txt", file, 11)
 
 	require.NoError(t, err)
 	require.Equal(t, &FileDescriptor{Id: MockFileId(123), AccessHash: MockFileAccessHash("hash")}, fd)
@@ -80,7 +84,7 @@ func TestUploadFile_Canceled(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
-	_, err := client.UploadFile(ctx, "file.txt", file)
+	_, err := client.UploadFile(ctx, nil, "file.txt", file, 11)
 	require.Error(t, err)
 }
 
@@ -91,7 +95,7 @@ func TestUploadFile_AlreadyClosed(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := client.UploadFile(ctx, "file.txt", file)
+	_, err := client.UploadFile(ctx, nil, "file.txt", file, 11)
 	require.Error(t, err)
 }
 
@@ -100,7 +104,7 @@ func TestUploadFile_InvalidURL(t *testing.T) {
 		WithBaseURL("::invalid")
 
 	file := strings.NewReader("hello world")
-	_, err := client.UploadFile(context.Background(), "file.txt", file)
+	_, err := client.UploadFile(context.Background(), nil, "file.txt", file, 11)
 
 	require.Error(t, err)
 }
@@ -109,7 +113,7 @@ func TestUploadFile_NewRequestFailed(t *testing.T) {
 	client := NewClient()
 	file := strings.NewReader("hello world")
 
-	_, err := client.UploadFile(nil, "file.txt", file) //nolint:staticcheck
+	_, err := client.UploadFile(nil, nil, "file.txt", file, 11) //nolint:staticcheck
 	require.Error(t, err)
 }
 
@@ -216,5 +220,42 @@ func TestDownloadFile_FailedToReadError(t *testing.T) {
 	client := NewClient()
 	fd := &FileDescriptor{Id: MockFileId(123), AccessHash: MockFileAccessHash("hash")}
 	_, err := client.DownloadFile(context.Background(), fd)
+	require.Error(t, err)
+}
+
+func TestPreuploadFile_Success(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/files/preupload", r.URL.Path)
+		require.Equal(t, "11", r.Header.Get("X-File-Size"))
+		require.Empty(t, r.Header.Get("X-User-Id"))
+
+		err := r.ParseMultipartForm(1 << 20)
+		require.NoError(t, err)
+		_, header, err := r.FormFile("file")
+		require.NoError(t, err)
+		require.Equal(t, "avatar.png", header.Filename)
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":123,"accessHash":"hash"}`))
+	}))
+	defer ts.Close()
+
+	client := NewClient().WithBaseURL(ts.URL)
+	fd, err := client.PreuploadFile(context.Background(), nil, "avatar.png", strings.NewReader("hello world"), 11)
+
+	require.NoError(t, err)
+	require.Equal(t, &FileDescriptor{Id: MockFileId(123), AccessHash: MockFileAccessHash("hash")}, fd)
+}
+
+func TestPreuploadFile_Failed(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/files/preupload").
+		Reply(400)
+
+	client := NewClient()
+	_, err := client.PreuploadFile(context.Background(), nil, "avatar.png", strings.NewReader("hello world"), 11)
 	require.Error(t, err)
 }

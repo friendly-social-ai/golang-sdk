@@ -146,3 +146,33 @@ func TestDeclineFriendRequest_Failed(t *testing.T) {
 	err := client.DeclineFriendRequest(context.Background(), nil, MockUserId(2), MockUserAccessHash("hash2"))
 	require.Error(t, err)
 }
+
+func TestForceGenerateFriendToken_Success(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/friends/generate/force").
+		MatchHeader("X-User-Id", "1").
+		MatchHeader("X-Token", "token").
+		Reply(200).
+		JSON(`{"token":"token2"}`)
+
+	client := NewClient()
+	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
+	token, err := client.ForceGenerateFriendToken(context.Background(), auth)
+
+	require.NoError(t, err)
+	require.Equal(t, MockFriendToken("token2"), token)
+}
+
+func TestForceGenerateFriendToken_Failed(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/friends/generate/force").
+		Reply(400)
+
+	client := NewClient()
+	_, err := client.ForceGenerateFriendToken(context.Background(), nil)
+	require.Error(t, err)
+}

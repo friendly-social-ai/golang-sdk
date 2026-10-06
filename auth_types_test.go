@@ -20,7 +20,30 @@ func MockToken(s string) Token {
 	return Token{value: s}
 }
 
+func MockFirebaseToken(s string) FirebaseToken {
+	return FirebaseToken{value: s}
+}
+
 func TestAuthTypes(t *testing.T) {
+	t.Run("FirebaseToken", func(t *testing.T) {
+		token, err := NewFirebaseToken("fcm")
+		require.NoError(t, err)
+		require.Equal(t, MockFirebaseToken("fcm"), token)
+		require.Equal(t, "fcm", token.Value())
+
+		_, err = NewFirebaseToken(strings.Repeat("1", 4097))
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrTooLongFirebaseToken)
+
+		data, err := json.Marshal(token)
+		require.NoError(t, err)
+		require.Equal(t, `"fcm"`, string(data))
+
+		var loaded FirebaseToken
+		require.NoError(t, json.Unmarshal(data, &loaded))
+		require.Equal(t, token, loaded)
+	})
+
 	t.Run("UserId", func(t *testing.T) {
 		id := NewUserId(123)
 		require.Equal(t, UserId{value: 123}, id)

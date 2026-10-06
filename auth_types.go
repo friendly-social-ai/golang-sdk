@@ -8,6 +8,7 @@ import (
 var (
 	ErrTokenLengthMustBe256          = fmt.Errorf("token must be 256 characters long")
 	ErrUserAccessHashLengthMustBe256 = fmt.Errorf("user access hash must be 256 characters long")
+	ErrTooLongFirebaseToken          = fmt.Errorf("firebase token must be at most 4096 characters long")
 )
 
 // --- USER ID ---
@@ -90,5 +91,34 @@ func (t Token) MarshalJSON() ([]byte, error) {
 }
 
 func (t *Token) UnmarshalJSON(bytes []byte) error {
+	return json.Unmarshal(bytes, &t.value)
+}
+
+// --- FIREBASE TOKEN ---
+
+// FirebaseToken represents Firebase Cloud Messaging token of a device receiving push notifications.
+type FirebaseToken struct {
+	value string
+}
+
+// Value returns FirebaseToken as a plain string.
+func (t FirebaseToken) Value() string {
+	return t.value
+}
+
+// NewFirebaseToken creates new FirebaseToken or returns an error if it is longer than 4096 characters.
+func NewFirebaseToken(s string) (FirebaseToken, error) {
+	if len(s) > 4096 {
+		return FirebaseToken{}, fmt.Errorf("length is %d: %w", len(s), ErrTooLongFirebaseToken)
+	}
+
+	return FirebaseToken{value: s}, nil
+}
+
+func (t FirebaseToken) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.value)
+}
+
+func (t *FirebaseToken) UnmarshalJSON(bytes []byte) error {
 	return json.Unmarshal(bytes, &t.value)
 }

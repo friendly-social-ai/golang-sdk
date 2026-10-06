@@ -34,6 +34,18 @@ func (c *Client) GenerateFriendToken(ctx context.Context, auth *Authorization) (
 	return resp.Token, nil
 }
 
+// ForceGenerateFriendToken creates token for Authorization's user by which another users can add them, through the
+// forced variant of token generation.
+func (c *Client) ForceGenerateFriendToken(ctx context.Context, auth *Authorization) (FriendToken, error) {
+	var resp generateFriendTokenResponse
+	err := c.do(ctx, auth, "POST", "/friends/generate/force", nil, &resp)
+	if err != nil {
+		return FriendToken{}, fmt.Errorf("failed to force generate friend token: %w", err)
+	}
+
+	return resp.Token, nil
+}
+
 // AddFriend makes request to add user with provided FriendToken and ID to Authorization's friends list.
 func (c *Client) AddFriend(ctx context.Context, auth *Authorization, token FriendToken, userId UserId) error {
 	req := addFriendRequest{

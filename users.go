@@ -5,15 +5,24 @@ import (
 	"fmt"
 )
 
-// UserDetails represents complete information about some user: ID, AccessHash, Nickname, Description, list of Interests and Avatar.
+// UserDetails represents complete information about some user: ID, AccessHash, Nickname, Email, Description, list of
+// Interests, Avatar, SocialLink and Friendship with Authorization's user. Email is nil when none is bound or hidden.
 type UserDetails struct {
 	Id          UserId          `json:"id"`
 	AccessHash  UserAccessHash  `json:"accessHash"`
 	Nickname    Nickname        `json:"nickname"`
+	Email       *Email          `json:"email"`
 	Description UserDescription `json:"description"`
 	Interests   Interests       `json:"interests"`
 	Avatar      *FileDescriptor `json:"avatar"`
 	SocialLink  SocialLink      `json:"socialLink"`
+	Friendship  Friendship      `json:"friendship"`
+}
+
+// UserProfile represents UserDetails of some user together with friends in common with Authorization's user.
+type UserProfile struct {
+	User          UserDetails   `json:"user"`
+	CommonFriends []UserDetails `json:"commonFriends"`
 }
 
 type editAccountOption func(*editAccountRequest)
@@ -32,24 +41,24 @@ type editAccountRequest struct {
 
 // GetSelfDetails returns UserDetails structure for provided Authorization data.
 func (c *Client) GetSelfDetails(ctx context.Context, auth *Authorization) (*UserDetails, error) {
-	var details UserDetails
-	err := c.do(ctx, auth, "GET", "/users/details", nil, &details)
+	var profile UserProfile
+	err := c.do(ctx, auth, "GET", "/users/details2", nil, &profile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get self details: %w", err)
 	}
 
-	return &details, nil
+	return &profile.User, nil
 }
 
-// GetUserDetails returns UserDetails for provided user's ID and AccessHash from provided Authorization's perspective.
-func (c *Client) GetUserDetails(ctx context.Context, auth *Authorization, userId UserId, accessHash UserAccessHash) (*UserDetails, error) {
-	var details UserDetails
-	err := c.do(ctx, auth, "GET", fmt.Sprintf("/users/details/%d/%s", userId.value, accessHash.value), nil, &details)
+// GetUserDetails returns UserProfile for provided user's ID and AccessHash from provided Authorization's perspective.
+func (c *Client) GetUserDetails(ctx context.Context, auth *Authorization, userId UserId, accessHash UserAccessHash) (*UserProfile, error) {
+	var profile UserProfile
+	err := c.do(ctx, auth, "GET", fmt.Sprintf("/users/details2/%d/%s", userId.value, accessHash.value), nil, &profile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user details: %w", err)
 	}
 
-	return &details, nil
+	return &profile, nil
 }
 
 // EditNicknameOption applies new Nickname for editing account request.

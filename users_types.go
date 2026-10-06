@@ -153,7 +153,7 @@ func (i *Interests) UnmarshalJSON(bytes []byte) error {
 
 // --- SOCIAL LINK ---
 
-// SocialLink represents link to user's external social network.
+// SocialLink represents link to user's external social network. Zero SocialLink means no link and is sent as null.
 type SocialLink struct {
 	value string
 }
@@ -177,9 +177,26 @@ func NewSocialLink(s string) (SocialLink, error) {
 }
 
 func (l SocialLink) MarshalJSON() ([]byte, error) {
+	if l.value == "" {
+		return []byte("null"), nil
+	}
+
 	return json.Marshal(l.value)
 }
 
 func (l *SocialLink) UnmarshalJSON(bytes []byte) error {
 	return json.Unmarshal(bytes, &l.value)
 }
+
+// --- FRIENDSHIP ---
+
+// Friendship represents relation of some user to Authorization's user.
+type Friendship string
+
+const (
+	FriendshipFriends         Friendship = "friends"
+	FriendshipIncomingRequest Friendship = "incomingRequest"
+	FriendshipOutgoingRequest Friendship = "outgoingRequest"
+	FriendshipOutgoingDecline Friendship = "outgoingDecline"
+	FriendshipNone            Friendship = "none"
+)

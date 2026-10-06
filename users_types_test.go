@@ -144,6 +144,14 @@ func TestUsersTypes(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, `"https://github.com/Atennop1"`, string(data))
 
+		noLinkData, err := json.Marshal(SocialLink{})
+		require.NoError(t, err)
+		require.Equal(t, `null`, string(noLinkData))
+
+		var noLink SocialLink
+		require.NoError(t, json.Unmarshal([]byte(`null`), &noLink))
+		require.Equal(t, SocialLink{}, noLink)
+
 		var loadedLink SocialLink
 		err = json.Unmarshal(data, &loadedLink)
 		require.NoError(t, err)

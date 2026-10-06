@@ -114,3 +114,46 @@ func TestConfirmLogin_Failed(t *testing.T) {
 	_, err := client.ConfirmLogin(context.Background(), MockEmail("example@example.com"), MockEmailCode(11111111))
 	require.Error(t, err)
 }
+
+func TestRegister_NoSocialLink(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/auth/generate").
+		JSON(`{"nickname":"atennop","description":"bio","interests":["programming"],"avatar":null,"socialLink":null}`).
+		Reply(200).
+		JSON(`{"id":1,"accessHash":"hash","token":"token"}`)
+
+	client := NewClient()
+	_, err := client.Register(context.Background(), MockNickname("atennop"), MockUserDescription("bio"),
+		MockInterests([]Interest{MockInterest("programming")}), nil, SocialLink{})
+	require.NoError(t, err)
+}
+
+func TestRegisterFirebaseToken_Success(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/auth/firebase").
+		MatchHeader("X-User-Id", "1").
+		MatchHeader("X-Token", "token").
+		JSON(`{"firebaseToken":"fcm"}`).
+		Reply(200)
+
+	client := NewClient()
+	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
+	err := client.RegisterFirebaseToken(context.Background(), auth, MockFirebaseToken("fcm"))
+	require.NoError(t, err)
+}
+
+func TestRegisterFirebaseToken_Failed(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/auth/firebase").
+		Reply(401)
+
+	client := NewClient()
+	err := client.RegisterFirebaseToken(context.Background(), nil, MockFirebaseToken("fcm"))
+	require.Error(t, err)
+}

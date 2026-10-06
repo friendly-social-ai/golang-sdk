@@ -26,6 +26,10 @@ type registerResponse struct {
 	Token      Token          `json:"token"`
 }
 
+type firebaseRequest struct {
+	FirebaseToken FirebaseToken `json:"firebaseToken"`
+}
+
 type sendLoginRequest struct {
 	Email Email `json:"email"`
 }
@@ -97,4 +101,14 @@ func (c *Client) ConfirmLogin(ctx context.Context, email Email, code EmailCode) 
 		AccessHash: resp.AccessHash,
 		Token:      resp.Token,
 	}, nil
+}
+
+// RegisterFirebaseToken binds Firebase Cloud Messaging token to Authorization's user for push notifications.
+func (c *Client) RegisterFirebaseToken(ctx context.Context, auth *Authorization, token FirebaseToken) error {
+	err := c.do(ctx, auth, "POST", "/auth/firebase", firebaseRequest{FirebaseToken: token}, nil)
+	if err != nil {
+		return fmt.Errorf("failed to register firebase token: %w", err)
+	}
+
+	return nil
 }

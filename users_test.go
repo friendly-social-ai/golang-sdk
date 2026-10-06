@@ -13,22 +13,25 @@ func TestGetSelfDetails_Success(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://api.getfriend.ly").
-		Get("/users/details").
+		Get("/users/details2$").
 		MatchHeader("Content-Type", "application/json").
 		MatchHeader("X-User-Id", "1").
 		MatchHeader("X-Token", "token").
 		Reply(200).
-		JSON(`{"id":1,"accessHash":"hash","nickname":"atennop","description":"something","interests":["vim"],"avatar":{"id":2,"accessHash":"hash2"}}`)
+		JSON(`{"user":{"id":1,"accessHash":"hash","nickname":"atennop","email":"me@example.com","description":"something","interests":["vim"],"avatar":{"id":2,"accessHash":"hash2"},"socialLink":null,"friendship":"none"}}`)
 
 	client := NewClient()
 	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
 	self, err := client.GetSelfDetails(context.Background(), auth)
 
+	email := MockEmail("me@example.com")
 	require.NoError(t, err)
 	require.Equal(t, &UserDetails{
 		Id:          MockUserId(1),
 		AccessHash:  MockUserAccessHash("hash"),
 		Nickname:    MockNickname("atennop"),
+		Email:       &email,
+		Friendship:  FriendshipNone,
 		Description: MockUserDescription("something"),
 		Interests: MockInterests([]Interest{
 			MockInterest("vim"),
@@ -44,7 +47,7 @@ func TestGetSelfDetails_Failed(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://api.getfriend.ly").
-		Get("/users/details").
+		Get("/users/details2$").
 		Reply(400)
 
 	client := NewClient()
@@ -56,31 +59,35 @@ func TestGetUserDetails_Success(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://api.getfriend.ly").
-		Get("/users/details/2/hash2").
+		Get("/users/details2/2/hash2").
 		MatchHeader("Content-Type", "application/json").
 		MatchHeader("X-User-Id", "1").
 		MatchHeader("X-Token", "token").
 		Reply(200).
-		JSON(`{"id":2,"accessHash":"hash2","nickname":"tr3ble","description":"something2","interests":["mac"],"avatar":{"id":3,"accessHash":"hash3"},"socialLink":"https://google.com"}`)
+		JSON(`{"user":{"id":2,"accessHash":"hash2","nickname":"tr3ble","email":null,"description":"something2","interests":["mac"],"avatar":{"id":3,"accessHash":"hash3"},"socialLink":"https://google.com","friendship":"friends"},"commonFriends":[{"id":5}]}`)
 
 	client := NewClient()
 	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
 	user, err := client.GetUserDetails(context.Background(), auth, MockUserId(2), MockUserAccessHash("hash2"))
 
 	require.NoError(t, err)
-	require.Equal(t, &UserDetails{
-		Id:          MockUserId(2),
-		AccessHash:  MockUserAccessHash("hash2"),
-		Nickname:    MockNickname("tr3ble"),
-		Description: MockUserDescription("something2"),
-		Interests: MockInterests([]Interest{
-			MockInterest("mac"),
-		}),
-		Avatar: &FileDescriptor{
-			Id:         MockFileId(3),
-			AccessHash: MockFileAccessHash("hash3"),
+	require.Equal(t, &UserProfile{
+		User: UserDetails{
+			Id:          MockUserId(2),
+			AccessHash:  MockUserAccessHash("hash2"),
+			Nickname:    MockNickname("tr3ble"),
+			Description: MockUserDescription("something2"),
+			Interests: MockInterests([]Interest{
+				MockInterest("mac"),
+			}),
+			Avatar: &FileDescriptor{
+				Id:         MockFileId(3),
+				AccessHash: MockFileAccessHash("hash3"),
+			},
+			SocialLink: MockSocialLink("https://google.com"),
+			Friendship: FriendshipFriends,
 		},
-		SocialLink: MockSocialLink("https://google.com"),
+		CommonFriends: []UserDetails{{Id: MockUserId(5)}},
 	}, user)
 }
 
@@ -88,7 +95,7 @@ func TestGetUserDetails_Failed(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://api.getfriend.ly").
-		Get("/users/details/2/hash2").
+		Get("/users/details2/2/hash2").
 		Reply(400)
 
 	client := NewClient()
@@ -154,7 +161,7 @@ func TestOptions(t *testing.T) {
 			},
 			expectedBodies: []string{
 				`{"socialLink":{"value":"https://example.com"}}`,
-				`{"socialLink":{"value":""}}`,
+				`{"socialLink":{"value":null}}`,
 			},
 		},
 	}
