@@ -4,6 +4,8 @@ This is a fork of the official Go SDK for interacting with Friendly API. This is
 
 Use the official SDK from [here](https://github.com/friendly-social/golang-sdk) for real works.
 
+NOTE: this forked SDK do not provide any release tag, if you want to use it, you need to pin to main.
+
 ## Installation
 
 ```bash
