@@ -1,20 +1,26 @@
 # Friendly Go SDK
-This is the official Go SDK for interacting with Friendly API.
 
-## Installation 
+This is a fork of the official Go SDK for interacting with Friendly API. This is mainly being used for the fork cli project in friendly social ai.
+
+Use the official SDK from [here](https://github.com/friendly-social/golang-sdk) for real works.
+
+## Installation
+
 ```bash
-go get github.com/friendly-social/golang-sdk
+go get github.com/friendly-social-ai/golang-sdk
 ```
 
 ## Quick Start
+
 All API interactions are done through `sdk.Client` struct. For example:
+
 ```go
 import (
 	"context"
 	"fmt"
 	"log"
 
-	sdk "github.com/friendly-social/golang-sdk"
+	sdk "github.com/friendly-social-ai/golang-sdk"
 )
 
 func main() {
@@ -43,6 +49,7 @@ func main() {
 ```
 
 ## Features
+
 - Lightweight wrapper around plain net/http
 - Streaming file uploads/downloads
 - Context-aware requests
@@ -50,4 +57,5 @@ func main() {
 - 100% test coverage
 
 ## Contributing
+
 PRs are welcome! Please ensure that public APIs remain backward compatible and that all tests pass, and your changes will be merged :)
