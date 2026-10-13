@@ -100,3 +100,76 @@ func TestReadActivity_Failed(t *testing.T) {
 	err := client.ReadActivity(context.Background(), nil, MockActivityId(5))
 	require.Error(t, err)
 }
+
+func TestGetNewUnreadActivity_Some(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Get("/activity/unreads/new").
+		MatchHeader("X-User-Id", "1").
+		MatchHeader("X-Token", "token").
+		Reply(200).
+		JSON(`{"type":"some","activityId":5}`)
+
+	client := NewClient()
+	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
+	id, err := client.GetNewUnreadActivity(context.Background(), auth)
+
+	require.NoError(t, err)
+	expected := MockActivityId(5)
+	require.Equal(t, &expected, id)
+}
+
+func TestGetNewUnreadActivity_None(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Get("/activity/unreads/new").
+		Reply(200).
+		JSON(`{"type":"none"}`)
+
+	client := NewClient()
+	id, err := client.GetNewUnreadActivity(context.Background(), nil)
+
+	require.NoError(t, err)
+	require.Nil(t, id)
+}
+
+func TestGetNewUnreadActivity_Failed(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Get("/activity/unreads/new").
+		Reply(401)
+
+	client := NewClient()
+	_, err := client.GetNewUnreadActivity(context.Background(), nil)
+	require.Error(t, err)
+}
+
+func TestAcknowledgeUnreadActivity_Success(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/activity/unreads/acknowledge").
+		MatchHeader("X-User-Id", "1").
+		MatchHeader("X-Token", "token").
+		Reply(200)
+
+	client := NewClient()
+	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
+	err := client.AcknowledgeUnreadActivity(context.Background(), auth)
+	require.NoError(t, err)
+}
+
+func TestAcknowledgeUnreadActivity_Failed(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/activity/unreads/acknowledge").
+		Reply(401)
+
+	client := NewClient()
+	err := client.AcknowledgeUnreadActivity(context.Background(), nil)
+	require.Error(t, err)
+}
