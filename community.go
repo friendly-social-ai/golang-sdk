@@ -18,13 +18,20 @@ type Cursor[T any] struct {
 	NextId *CursorId `json:"nextId"`
 }
 
-// CommunityPost represents community post. Text and Owner are nil when post is deleted.
+// CommunityPostNewReply points to reply that Authorization has not viewed yet. Transitive is true when reply is not direct.
+type CommunityPostNewReply struct {
+	Id         CommunityPostId `json:"id"`
+	Transitive bool            `json:"transitive"`
+}
+
+// CommunityPost represents community post. Text and Owner are nil when post is deleted. NewReply is nil when there is no unviewed reply.
 type CommunityPost struct {
 	Type          string                  `json:"type"`
 	Id            CommunityPostId         `json:"id"`
 	AccessHash    CommunityPostAccessHash `json:"accessHash"`
 	Instant       time.Time               `json:"instant"`
 	ReplyPreviews []UserDetails           `json:"replyPreviews"`
+	NewReply      *CommunityPostNewReply  `json:"newReply"`
 	Text          *CommunityPostText      `json:"text"`
 	Owner         *UserDetails            `json:"owner"`
 	Edited        bool                    `json:"edited"`
@@ -150,6 +157,16 @@ func (c *Client) DeleteCommunityPost(ctx context.Context, auth *Authorization, i
 	err := c.do(ctx, auth, "POST", fmt.Sprintf("/community/%d/delete", id.value), nil, nil)
 	if err != nil {
 		return fmt.Errorf("failed to delete community post: %w", err)
+	}
+
+	return nil
+}
+
+// ViewCommunityPost marks post as viewed by Authorization, clearing its new reply and subscribing to replies when post is root.
+func (c *Client) ViewCommunityPost(ctx context.Context, auth *Authorization, post CommunityPostDescriptor) error {
+	err := c.do(ctx, auth, "POST", fmt.Sprintf("/community/%d/%s/view", post.Id.value, post.AccessHash.value), nil, nil)
+	if err != nil {
+		return fmt.Errorf("failed to view community post: %w", err)
 	}
 
 	return nil

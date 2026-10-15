@@ -279,3 +279,47 @@ func TestDeleteCommunityPost_Failed(t *testing.T) {
 	err := client.DeleteCommunityPost(context.Background(), nil, MockCommunityPostId(7))
 	require.Error(t, err)
 }
+
+func TestListCommunity_NewReply(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Get("/community/list").
+		Reply(200).
+		JSON(`{"data":[{"type":"plain","id":7,"accessHash":"hash","instant":"2026-10-06T08:40:32.308976Z","replyPreviews":[],"newReply":{"id":9,"transitive":true},"text":"hello","owner":{"id":2},"edited":false}],"nextId":null}`)
+
+	client := NewClient()
+	page, err := client.ListCommunity(context.Background(), nil, nil)
+
+	require.NoError(t, err)
+	require.Equal(t, &CommunityPostNewReply{Id: MockCommunityPostId(9), Transitive: true}, page.Data[0].NewReply)
+}
+
+func TestViewCommunityPost_Success(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/community/7/hash/view").
+		MatchHeader("X-User-Id", "1").
+		MatchHeader("X-Token", "token").
+		Reply(200)
+
+	client := NewClient()
+	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
+	post := CommunityPostDescriptor{Id: MockCommunityPostId(7), AccessHash: MockCommunityPostAccessHash("hash")}
+	err := client.ViewCommunityPost(context.Background(), auth, post)
+	require.NoError(t, err)
+}
+
+func TestViewCommunityPost_Failed(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/community/7/hash/view").
+		Reply(404)
+
+	client := NewClient()
+	post := CommunityPostDescriptor{Id: MockCommunityPostId(7), AccessHash: MockCommunityPostAccessHash("hash")}
+	err := client.ViewCommunityPost(context.Background(), nil, post)
+	require.Error(t, err)
+}
