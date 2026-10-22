@@ -280,19 +280,20 @@ func TestDeleteCommunityPost_Failed(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestListCommunity_NewReply(t *testing.T) {
+func TestListCommunity_NewUnreadId(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://api.getfriend.ly").
 		Get("/community/list").
 		Reply(200).
-		JSON(`{"data":[{"type":"plain","id":7,"accessHash":"hash","instant":"2026-10-06T08:40:32.308976Z","replyPreviews":[],"newReply":{"id":9,"transitive":true},"text":"hello","owner":{"id":2},"edited":false}],"nextId":null}`)
+		JSON(`{"data":[{"type":"plain","id":7,"accessHash":"hash","instant":"2026-10-06T08:40:32.308976Z","replyPreviews":[],"newUnreadId":9,"text":"hello","owner":{"id":2},"edited":false}],"nextId":null}`)
 
 	client := NewClient()
 	page, err := client.ListCommunity(context.Background(), nil, nil)
 
 	require.NoError(t, err)
-	require.Equal(t, &CommunityPostNewReply{Id: MockCommunityPostId(9), Transitive: true}, page.Data[0].NewReply)
+	expected := MockCommunityPostId(9)
+	require.Equal(t, &expected, page.Data[0].NewUnreadId)
 }
 
 func TestViewCommunityPost_Success(t *testing.T) {
