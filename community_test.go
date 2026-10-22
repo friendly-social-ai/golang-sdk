@@ -296,11 +296,11 @@ func TestListCommunity_NewUnreadId(t *testing.T) {
 	require.Equal(t, &expected, page.Data[0].NewUnreadId)
 }
 
-func TestViewCommunityPost_Success(t *testing.T) {
+func TestReadCommunityPost_Success(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://api.getfriend.ly").
-		Post("/community/7/hash/view").
+		Post("/community/7/hash/read").
 		MatchHeader("X-User-Id", "1").
 		MatchHeader("X-Token", "token").
 		Reply(200)
@@ -308,19 +308,19 @@ func TestViewCommunityPost_Success(t *testing.T) {
 	client := NewClient()
 	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
 	post := CommunityPostDescriptor{Id: MockCommunityPostId(7), AccessHash: MockCommunityPostAccessHash("hash")}
-	err := client.ViewCommunityPost(context.Background(), auth, post)
+	err := client.ReadCommunityPost(context.Background(), auth, post)
 	require.NoError(t, err)
 }
 
-func TestViewCommunityPost_Failed(t *testing.T) {
+func TestReadCommunityPost_Failed(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://api.getfriend.ly").
-		Post("/community/7/hash/view").
+		Post("/community/7/hash/read").
 		Reply(404)
 
 	client := NewClient()
 	post := CommunityPostDescriptor{Id: MockCommunityPostId(7), AccessHash: MockCommunityPostAccessHash("hash")}
-	err := client.ViewCommunityPost(context.Background(), nil, post)
+	err := client.ReadCommunityPost(context.Background(), nil, post)
 	require.Error(t, err)
 }

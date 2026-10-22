@@ -156,11 +156,11 @@ func (c *Client) DeleteCommunityPost(ctx context.Context, auth *Authorization, i
 	return nil
 }
 
-// ViewCommunityPost marks post as viewed by Authorization, clearing its new reply and subscribing to replies when post is root.
-func (c *Client) ViewCommunityPost(ctx context.Context, auth *Authorization, post CommunityPostDescriptor) error {
-	err := c.do(ctx, auth, "POST", fmt.Sprintf("/community/%d/%s/view", post.Id.value, post.AccessHash.value), nil, nil)
+// ReadCommunityPost marks post, its upstream and its first page of replies as read by Authorization.
+func (c *Client) ReadCommunityPost(ctx context.Context, auth *Authorization, post CommunityPostDescriptor) error {
+	err := c.do(ctx, auth, "POST", fmt.Sprintf("/community/%d/%s/read", post.Id.value, post.AccessHash.value), nil, nil)
 	if err != nil {
-		return fmt.Errorf("failed to view community post: %w", err)
+		return fmt.Errorf("failed to read community post: %w", err)
 	}
 
 	return nil
