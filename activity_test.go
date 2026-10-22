@@ -46,6 +46,22 @@ func TestListActivity_Success(t *testing.T) {
 	}, page)
 }
 
+func TestListActivity_IndirectReplies(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Get("/activity/list").
+		Reply(200).
+		JSON(`{"data":[{"type":"indirect_replies","id":5,"instant":"2026-10-06T09:30:47.408013Z","isRead":false,"post":{"type":"plain","id":7,"accessHash":"root","instant":"2026-10-06T09:30:47.408013Z","replyPreviews":[],"newUnreadId":9,"text":"root","owner":{"id":2},"edited":false},"commonDenominator":{"type":"plain","id":8,"accessHash":"hash","instant":"2026-10-06T09:30:47.408013Z","replyPreviews":[],"newUnreadId":9,"text":"reply","owner":{"id":3},"edited":false}}],"nextId":null}`)
+
+	client := NewClient()
+	page, err := client.ListActivity(context.Background(), nil, nil)
+
+	require.NoError(t, err)
+
+	require.Equal(t, CommunityPostDescriptor{Id: MockCommunityPostId(8), AccessHash: MockCommunityPostAccessHash("hash")}, page.Data[0].CommonDenominator.Descriptor())
+}
+
 func TestListActivity_Cursor(t *testing.T) {
 	defer gock.Off()
 
