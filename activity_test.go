@@ -62,6 +62,27 @@ func TestListActivity_IndirectReplies(t *testing.T) {
 	require.Equal(t, CommunityPostDescriptor{Id: MockCommunityPostId(8), AccessHash: MockCommunityPostAccessHash("hash")}, page.Data[0].CommonDenominator.Descriptor())
 }
 
+func TestListActivity_NewRequest(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Get("/activity/list").
+		Reply(200).
+		JSON(`{"data":[{"type":"new_request","id":5,"instant":"2026-10-06T09:30:47.408013Z","isRead":false,"from":{"id":2,"accessHash":"hash","nickname":"bob"},"isMutual":true}],"nextId":null}`)
+
+	client := NewClient()
+	page, err := client.ListActivity(context.Background(), nil, nil)
+
+	require.NoError(t, err)
+
+	activity := page.Data[0]
+	require.Nil(t, activity.Post)
+	require.True(t, activity.IsMutual)
+	require.Equal(t, MockUserId(2), activity.From.Id)
+	require.Equal(t, MockUserAccessHash("hash"), activity.From.AccessHash)
+	require.Equal(t, MockNickname("bob"), activity.From.Nickname)
+}
+
 func TestListActivity_Cursor(t *testing.T) {
 	defer gock.Off()
 

@@ -8,7 +8,8 @@ import (
 
 // Activity represents an event for Authorization's user. Type "new_reply" means Post replied to one of user's posts. Type
 // "indirect_replies" means Post, a root post user subscribes to, got new replies, and CommonDenominator is the closest
-// post that leads to all of them. CommonDenominator is nil for other types.
+// post that leads to all of them. Type "new_request" means From sent user a friend request, and IsMutual tells that it
+// accepted user's request. CommonDenominator and From are nil for other types.
 type Activity struct {
 	Type              string         `json:"type"`
 	Id                ActivityId     `json:"id"`
@@ -16,6 +17,8 @@ type Activity struct {
 	IsRead            bool           `json:"isRead"`
 	Post              *CommunityPost `json:"post"`
 	CommonDenominator *CommunityPost `json:"commonDenominator"`
+	From              *UserDetails   `json:"from"`
+	IsMutual          bool           `json:"isMutual"`
 }
 
 type newUnreadActivityResponse struct {
