@@ -17,7 +17,7 @@ func TestListActivity_Success(t *testing.T) {
 		MatchHeader("X-User-Id", "1").
 		MatchHeader("X-Token", "token").
 		Reply(200).
-		JSON(`{"data":[{"type":"reply","id":5,"instant":"2026-10-06T09:30:47.408013Z","isRead":false,"post":{"id":7,"accessHash":"hash","instant":"2026-10-06T09:30:47.408013Z","replyPreviews":[],"text":"hello","owner":{"id":2},"edited":false}}],"nextId":"next"}`)
+		JSON(`{"data":[{"type":"new_reply","id":5,"instant":"2026-10-06T09:30:47.408013Z","isRead":false,"post":{"id":7,"accessHash":"hash","instant":"2026-10-06T09:30:47.408013Z","replyPreviews":[],"text":"hello","owner":{"id":2},"edited":false}}],"nextId":"next"}`)
 
 	client := NewClient()
 	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
@@ -30,7 +30,7 @@ func TestListActivity_Success(t *testing.T) {
 	next := MockCursorId("next")
 	require.Equal(t, &Cursor[Activity]{
 		Data: []Activity{{
-			Type:    "reply",
+			Type:    "new_reply",
 			Id:      MockActivityId(5),
 			Instant: instant,
 			Post: &CommunityPost{

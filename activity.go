@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Activity represents an event for Authorization's user. Type "reply" means Post replied to one of user's posts. Type
+// Activity represents an event for Authorization's user. Type "new_reply" means Post replied to one of user's posts. Type
 // "indirect_replies" means Post, a root post user subscribes to, got new replies, and CommonDenominator is the closest
 // post that leads to all of them. CommonDenominator is nil for other types.
 type Activity struct {
