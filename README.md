@@ -2,7 +2,7 @@
 
 This is a fork of the official Go SDK for interacting with Friendly API. This is mainly being used for the fork cli project in friendly social ai.
 
-Use the official SDK from [here](https://github.com/friendly-social/golang-sdk) for real works.
+Use the official SDK from [here](https://git.getfriend.ly/golang-sdk) for real works.
 
 NOTE: this forked SDK do not provide any release tag, if you want to use it, you need to pin to main.
 
