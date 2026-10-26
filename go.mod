@@ -1,4 +1,4 @@
-module github.com/friendly-social-ai/golang-sdk
+module git.getfriend.ly/ai/golang-sdk
 
 go 1.25.5
 

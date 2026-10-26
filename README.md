@@ -9,7 +9,7 @@ NOTE: this forked SDK do not provide any release tag, if you want to use it, you
 ## Installation
 
 ```bash
-go get github.com/friendly-social-ai/golang-sdk@main
+go get git.getfriend.ly/ai/golang-sdk@main
 ```
 
 ## Quick Start
@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"log"
 
-	sdk "github.com/friendly-social-ai/golang-sdk"
+	sdk "git.getfriend.ly/ai/golang-sdk"
 )
 
 func main() {
