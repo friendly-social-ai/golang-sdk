@@ -138,6 +138,33 @@ func TestReadActivity_Failed(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestReadAllActivity_Success(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/activity/read/all").
+		MatchHeader("X-User-Id", "1").
+		MatchHeader("X-Token", "token").
+		Reply(200)
+
+	client := NewClient()
+	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
+	err := client.ReadAllActivity(context.Background(), auth)
+	require.NoError(t, err)
+}
+
+func TestReadAllActivity_Failed(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/activity/read/all").
+		Reply(401)
+
+	client := NewClient()
+	err := client.ReadAllActivity(context.Background(), nil)
+	require.Error(t, err)
+}
+
 func TestGetNewUnreadActivity_Some(t *testing.T) {
 	defer gock.Off()
 

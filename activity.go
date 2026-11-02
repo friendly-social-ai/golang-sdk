@@ -47,6 +47,16 @@ func (c *Client) ReadActivity(ctx context.Context, auth *Authorization, id Activ
 	return nil
 }
 
+// ReadAllActivity marks all of Authorization's activity as read.
+func (c *Client) ReadAllActivity(ctx context.Context, auth *Authorization) error {
+	err := c.do(ctx, auth, "POST", "/activity/read/all", nil, nil)
+	if err != nil {
+		return fmt.Errorf("failed to read all activity: %w", err)
+	}
+
+	return nil
+}
+
 // GetNewUnreadActivity returns ID of Authorization's newest unacknowledged unread activity, or nil when there is none.
 func (c *Client) GetNewUnreadActivity(ctx context.Context, auth *Authorization) (*ActivityId, error) {
 	var resp newUnreadActivityResponse
