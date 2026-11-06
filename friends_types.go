@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	ErrFriendTokenLengthMustBe256 = fmt.Errorf("friend token must be 256 characters length")
-	ErrFriendTokenExpired         = fmt.Errorf("friend token expired")
+	ErrFriendTokenLengthMustBe16 = fmt.Errorf("friend token must be 16 characters length")
+	ErrFriendTokenExpired        = fmt.Errorf("friend token expired")
 )
 
 // --- FRIEND TOKEN
@@ -22,10 +22,10 @@ func (t FriendToken) Value() string {
 	return t.value
 }
 
-// NewFriendToken creates new FriendToken or returns an error if length is not 256.
+// NewFriendToken creates new FriendToken or returns an error if length is not 16.
 func NewFriendToken(s string) (FriendToken, error) {
-	if len(s) != 256 {
-		return FriendToken{}, fmt.Errorf("length is %d: %w", len(s), ErrFriendTokenLengthMustBe256)
+	if len(s) != 16 {
+		return FriendToken{}, fmt.Errorf("length is %d: %w", len(s), ErrFriendTokenLengthMustBe16)
 	}
 
 	return FriendToken{value: s}, nil

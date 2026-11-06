@@ -3,11 +3,11 @@ package sdk
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 type addFriendRequest struct {
-	UserId UserId       `json:"userId"`
-	Token  *FriendToken `json:"token"`
+	Token *FriendToken `json:"token"`
 }
 
 type friendRequestRequest struct {
@@ -15,8 +15,10 @@ type friendRequestRequest struct {
 	AccessHash *UserAccessHash `json:"userAccessHash"`
 }
 
-type generateFriendTokenResponse struct {
-	Token FriendToken `json:"token"`
+// GeneratedFriendToken is a FriendToken with the time the backend stops accepting it.
+type GeneratedFriendToken struct {
+	Token      FriendToken `json:"token"`
+	Expiration time.Time   `json:"expiration"`
 }
 
 type addFriendResponse struct {
@@ -24,33 +26,32 @@ type addFriendResponse struct {
 }
 
 // GenerateFriendToken creates token for Authorization's user by which another users can add them.
-func (c *Client) GenerateFriendToken(ctx context.Context, auth *Authorization) (FriendToken, error) {
-	var resp generateFriendTokenResponse
+func (c *Client) GenerateFriendToken(ctx context.Context, auth *Authorization) (GeneratedFriendToken, error) {
+	var resp GeneratedFriendToken
 	err := c.do(ctx, auth, "POST", "/friends/generate", nil, &resp)
 	if err != nil {
-		return FriendToken{}, fmt.Errorf("failed to generate friend token: %w", err)
+		return GeneratedFriendToken{}, fmt.Errorf("failed to generate friend token: %w", err)
 	}
 
-	return resp.Token, nil
+	return resp, nil
 }
 
 // ForceGenerateFriendToken creates token for Authorization's user by which another users can add them, through the
 // forced variant of token generation.
-func (c *Client) ForceGenerateFriendToken(ctx context.Context, auth *Authorization) (FriendToken, error) {
-	var resp generateFriendTokenResponse
+func (c *Client) ForceGenerateFriendToken(ctx context.Context, auth *Authorization) (GeneratedFriendToken, error) {
+	var resp GeneratedFriendToken
 	err := c.do(ctx, auth, "POST", "/friends/generate/force", nil, &resp)
 	if err != nil {
-		return FriendToken{}, fmt.Errorf("failed to force generate friend token: %w", err)
+		return GeneratedFriendToken{}, fmt.Errorf("failed to force generate friend token: %w", err)
 	}
 
-	return resp.Token, nil
+	return resp, nil
 }
 
-// AddFriend makes request to add user with provided FriendToken and ID to Authorization's friends list.
-func (c *Client) AddFriend(ctx context.Context, auth *Authorization, token FriendToken, userId UserId) error {
+// AddFriend makes request to add the owner of provided FriendToken to Authorization's friends list.
+func (c *Client) AddFriend(ctx context.Context, auth *Authorization, token FriendToken) error {
 	req := addFriendRequest{
-		UserId: userId,
-		Token:  &token,
+		Token: &token,
 	}
 
 	var resp addFriendResponse
