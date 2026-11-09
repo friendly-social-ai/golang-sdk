@@ -25,6 +25,15 @@ type addFriendResponse struct {
 	Type string `json:"type"`
 }
 
+// FriendTokenOwner is the public profile of the user who owns a FriendToken: Nickname, Description, list of Interests
+// and Avatar.
+type FriendTokenOwner struct {
+	Nickname    Nickname        `json:"nickname"`
+	Description UserDescription `json:"description"`
+	Interests   Interests       `json:"interests"`
+	Avatar      *FileDescriptor `json:"avatar"`
+}
+
 // GenerateFriendToken creates token for Authorization's user by which another users can add them.
 func (c *Client) GenerateFriendToken(ctx context.Context, auth *Authorization) (GeneratedFriendToken, error) {
 	var resp GeneratedFriendToken
@@ -65,6 +74,18 @@ func (c *Client) AddFriend(ctx context.Context, auth *Authorization, token Frien
 	}
 
 	return nil
+}
+
+// GetFriendTokenOwner returns FriendTokenOwner of provided FriendToken without adding them. The backend answers it for
+// an expired token too, so only AddFriend reports expiration.
+func (c *Client) GetFriendTokenOwner(ctx context.Context, token FriendToken) (*FriendTokenOwner, error) {
+	var owner FriendTokenOwner
+	err := c.do(ctx, nil, "GET", "/friends/add/details/"+token.value, nil, &owner)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get friend token owner: %w", err)
+	}
+
+	return &owner, nil
 }
 
 // SendFriendRequest sends friend request from Authorization to user with provided ID and AccessHash.
