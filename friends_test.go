@@ -65,7 +65,7 @@ func TestGetFriendTokenOwner_Success(t *testing.T) {
 	gock.New("https://api.getfriend.ly").
 		Get("/friends/add/details/token2").
 		Reply(200).
-		JSON(`{"nickname":"atennop","description":"something","interests":["vim"],"avatar":{"id":2,"accessHash":"hash2"}}`)
+		JSON(`{"type":"ok","nickname":"atennop","description":"something","interests":["vim"],"avatar":{"id":2,"accessHash":"hash2"},"expiration":"2026-11-08T12:00:00Z"}`)
 
 	client := NewClient()
 	owner, err := client.GetFriendTokenOwner(context.Background(), MockFriendToken("token2"))
@@ -79,22 +79,23 @@ func TestGetFriendTokenOwner_Success(t *testing.T) {
 			Id:         MockFileId(2),
 			AccessHash: MockFileAccessHash("hash2"),
 		},
+		Expiration: time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC),
 	}, owner)
 }
 
-func TestGetFriendTokenOwner_NotFound(t *testing.T) {
+func TestGetFriendTokenOwner_Expired(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://api.getfriend.ly").
 		Get("/friends/add/details/token2").
-		Reply(404)
+		Reply(200).
+		JSON(`{"type":"expired"}`)
 
 	client := NewClient()
-	_, err := client.GetFriendTokenOwner(context.Background(), MockFriendToken("token2"))
+	owner, err := client.GetFriendTokenOwner(context.Background(), MockFriendToken("token2"))
 
-	var apiErr APIError
-	require.ErrorAs(t, err, &apiErr)
-	require.Equal(t, 404, apiErr.Code)
+	require.ErrorIs(t, err, ErrFriendTokenExpired)
+	require.Nil(t, owner)
 }
 
 func TestAddFriend_TokenExpired(t *testing.T) {

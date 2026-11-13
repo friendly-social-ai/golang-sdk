@@ -26,12 +26,18 @@ type addFriendResponse struct {
 }
 
 // FriendTokenOwner is the public profile of the user who owns a FriendToken: Nickname, Description, list of Interests
-// and Avatar.
+// and Avatar, with the Expiration of the FriendToken.
 type FriendTokenOwner struct {
 	Nickname    Nickname        `json:"nickname"`
 	Description UserDescription `json:"description"`
 	Interests   Interests       `json:"interests"`
 	Avatar      *FileDescriptor `json:"avatar"`
+	Expiration  time.Time       `json:"expiration"`
+}
+
+type friendTokenOwnerResponse struct {
+	Type string `json:"type"`
+	FriendTokenOwner
 }
 
 // GenerateFriendToken creates token for Authorization's user by which another users can add them.
@@ -76,16 +82,20 @@ func (c *Client) AddFriend(ctx context.Context, auth *Authorization, token Frien
 	return nil
 }
 
-// GetFriendTokenOwner returns FriendTokenOwner of provided FriendToken without adding them. The backend answers it for
-// an expired token too, so only AddFriend reports expiration.
+// GetFriendTokenOwner returns FriendTokenOwner of provided FriendToken without adding them, or ErrFriendTokenExpired
+// when the token expired or never existed.
 func (c *Client) GetFriendTokenOwner(ctx context.Context, token FriendToken) (*FriendTokenOwner, error) {
-	var owner FriendTokenOwner
-	err := c.do(ctx, nil, "GET", "/friends/add/details/"+token.value, nil, &owner)
+	var resp friendTokenOwnerResponse
+	err := c.do(ctx, nil, "GET", "/friends/add/details/"+token.value, nil, &resp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get friend token owner: %w", err)
 	}
 
-	return &owner, nil
+	if resp.Type == "expired" {
+		return nil, ErrFriendTokenExpired
+	}
+
+	return &resp.FriendTokenOwner, nil
 }
 
 // SendFriendRequest sends friend request from Authorization to user with provided ID and AccessHash.
