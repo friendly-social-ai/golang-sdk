@@ -65,8 +65,9 @@ type CommunityPostDetails struct {
 }
 
 type communityPostRequest struct {
-	Text    CommunityPostText        `json:"text"`
-	ReplyTo *CommunityPostDescriptor `json:"replyTo,omitempty"`
+	Text           CommunityPostText        `json:"text"`
+	ReplyTo        *CommunityPostDescriptor `json:"replyTo,omitempty"`
+	ContinueThread bool                     `json:"continueThread,omitempty"`
 }
 
 type communityEditRequest struct {
@@ -83,11 +84,16 @@ func cursorPath(path string, cursor *CursorId) string {
 
 // PostCommunity creates community post with provided text, as a reply when replyTo is not nil.
 func (c *Client) PostCommunity(ctx context.Context, auth *Authorization, text CommunityPostText, replyTo *CommunityPostDescriptor) (*CommunityPostDescriptor, error) {
-	req := communityPostRequest{
-		Text:    text,
-		ReplyTo: replyTo,
-	}
+	return c.postCommunity(ctx, auth, communityPostRequest{Text: text, ReplyTo: replyTo})
+}
 
+// ContinueCommunityThread replies to replyTo as the end of its thread. When the thread went on since replyTo was read,
+// the reply goes to its latest post instead. When the thread split, the reply goes to replyTo.
+func (c *Client) ContinueCommunityThread(ctx context.Context, auth *Authorization, text CommunityPostText, replyTo CommunityPostDescriptor) (*CommunityPostDescriptor, error) {
+	return c.postCommunity(ctx, auth, communityPostRequest{Text: text, ReplyTo: &replyTo, ContinueThread: true})
+}
+
+func (c *Client) postCommunity(ctx context.Context, auth *Authorization, req communityPostRequest) (*CommunityPostDescriptor, error) {
 	var resp CommunityPostDescriptor
 	err := c.do(ctx, auth, "POST", "/community", req, &resp)
 	if err != nil {

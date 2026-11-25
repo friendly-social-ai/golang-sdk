@@ -59,6 +59,24 @@ func TestPostCommunity_Reply(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestContinueCommunityThread_Success(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://api.getfriend.ly").
+		Post("/community").
+		JSON(`{"text":"hello","replyTo":{"id":4,"accessHash":"parent"},"continueThread":true}`).
+		Reply(200).
+		JSON(`{"id":5,"accessHash":"hash"}`)
+
+	client := NewClient()
+	auth := &Authorization{Id: MockUserId(1), Token: MockToken("token")}
+	replyTo := CommunityPostDescriptor{Id: MockCommunityPostId(4), AccessHash: MockCommunityPostAccessHash("parent")}
+	post, err := client.ContinueCommunityThread(context.Background(), auth, MockCommunityPostText("hello"), replyTo)
+
+	require.NoError(t, err)
+	require.Equal(t, &CommunityPostDescriptor{Id: MockCommunityPostId(5), AccessHash: MockCommunityPostAccessHash("hash")}, post)
+}
+
 func TestPostCommunity_Failed(t *testing.T) {
 	defer gock.Off()
 
